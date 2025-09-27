@@ -3,7 +3,7 @@
   import type { Election, ElectionCandidate, ElectionResult } from '$lib/firebase/types';
   import { getElectionById, getElectionResults, getElectionCandidates } from '$lib/firebase/getters';
   import { page } from '$app/state';
-	import { circIn } from 'svelte/easing';
+import MapComponent from '$lib/components/MapComponent.svelte'; 
 
   let election: Election | null = null;
   let results: ElectionResult[] = [];
@@ -147,7 +147,7 @@
     {/if}
 
     {#if activeTab === 'map'}
-      <p class="text-gray-600">Map view is under construction.</p>
+      <MapComponent election={election} />
     {/if}
   {/if}
 </main>
