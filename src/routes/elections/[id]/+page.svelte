@@ -12,7 +12,7 @@
   let loading = true;
   let error: string | null = null;
 
-  let activeTab: 'results' | 'candidates' = 'results';
+  let activeTab: 'results' | 'candidates' | 'map' = 'results';
 
   onMount(async () => {
     try {
@@ -81,6 +81,17 @@
       >
         Candidates
       </button>
+
+      <button
+        class="px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-200"
+        class:border-blue-600={activeTab === 'map'}
+        class:text-blue-600={activeTab === 'map'}
+        class:text-gray-500={activeTab !== 'map'}
+        class:border-transparent={activeTab !== 'map'}
+        on:click={() => activeTab = 'map'}
+      >
+        Map
+      </button>
     </div>
 
     <!-- Tab Content -->
@@ -133,6 +144,10 @@
           </tbody>
         </table>
       {/if}
+    {/if}
+
+    {#if activeTab === 'map'}
+      <p class="text-gray-600">Map view is under construction.</p>
     {/if}
   {/if}
 </main>
