@@ -3,10 +3,12 @@
   import type { Election, ElectionCandidate, ElectionResult } from '$lib/firebase/types';
   import { getElectionById, getElectionResults, getElectionCandidates } from '$lib/firebase/getters';
   import { page } from '$app/state';
+	import { circIn } from 'svelte/easing';
 
   let election: Election | null = null;
   let results: ElectionResult[] = [];
   let candidates: ElectionCandidate[] = [];
+  let candidatesMap = new Map<string, ElectionCandidate>();
   let loading = true;
   let error: string | null = null;
 
@@ -22,6 +24,14 @@
       election = await getElectionById(id);
       results = await getElectionResults(id);
       candidates = await getElectionCandidates(id);
+
+      candidates.forEach(c => {
+        if (c._id) {
+            candidatesMap.set(c._id, c);
+        }
+      });
+
+      console.log("Candidates Map:", candidatesMap);
     } catch (e) {
       console.error(e);
       error = 'Failed to load election details.';
@@ -80,7 +90,7 @@
         <div class="space-y-4">
           {#each results as r}
             <div class="bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow">
-              <div class="font-semibold text-gray-800">{r.polling_division} | Station: {r.polling_station}</div>
+              <div class="font-semibold text-gray-800">Division: {r.polling_division} | Station: {r.polling_station}</div>
               <div class="text-sm text-gray-500 mt-1">
                 Total Votes: {r.total_votes} | Rejected: {r.ballots_rejected} | Electors: {r.electors_on_list}
               </div>
@@ -88,7 +98,7 @@
             <ul class="mt-2 space-y-1">
                 {#each r.candidate_results.filter(c => c != null) as c}
                 <li class="flex justify-between text-gray-700">
-                    <span>{c.id}</span>
+                    <span>Name: {candidatesMap.get(c.id)?.first_name} {candidatesMap.get(c.id)?.last_name}, Votes: {c.votes}</span>
                 </li>
                 {/each}
             </ul>

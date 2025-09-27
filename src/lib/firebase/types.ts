@@ -96,6 +96,7 @@ export interface Election {
 }
 
 export interface ElectionCandidate {
+  _id?: string;
   election_id: string;
   person_id: string;
   first_name: string;
