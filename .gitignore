@@ -24,6 +24,7 @@ vite.config.ts.timestamp-*
 
 # Firebase functions secrets
 functions/.runtimeconfig.json
+firebase-debug.log
 serviceAccount*.json
 *.key.json
 
