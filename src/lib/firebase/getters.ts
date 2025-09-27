@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, getDoc, query, where, orderBy, type DocumentData } from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, query, where, orderBy, type DocumentData, DocumentSnapshot } from "firebase/firestore";
 import type {
   Constituency,
   ElectoralDivision,
@@ -57,18 +57,21 @@ export async function getAllParties(): Promise<Party[]> {
   const snapshot = await getDocs(collection(db, "parties"));
   return snapshot.docs.map(doc => doc.data() as Party);
 }
+  
+function parseElection(doc: DocumentSnapshot): Election {
+  const data = doc.data(); // data contains the actual fields
+  if (!data) throw new Error("Document has no data");
 
-function parseElection(doc: DocumentData): Election {
   return {
-    election_id: doc.id,
-    name: doc.name,
-    type: doc.type,
-    date: doc.date.toDate(),          // convert Firestore timestamp to JS Date
-    recount_date: doc.recount_date?.toDate(),
-    constituency_name: doc.constituency_name,
-    constituency_id: doc.constituency_id,
-    created_at: doc.created_at?.toDate(),
-    updated_at: doc.updated_at?.toDate(),
+    election_id: doc.id,                        // Now this works
+    name: data.name,
+    type: data.type,
+    date: data.date.toDate(),
+    recount_date: data.recount_date?.toDate(),
+    constituency_name: data.constituency_name,
+    constituency_id: data.constituency_id,
+    created_at: data.created_at?.toDate(),
+    updated_at: data.updated_at?.toDate(),
   };
 }
 
@@ -82,20 +85,28 @@ export async function getElections(): Promise<Election[]> {
   );
   const snapshot = await getDocs(q);
 
-  const elections = snapshot.docs.map(doc => parseElection(doc.data()));
+  const elections = snapshot.docs.map(doc => parseElection(doc));
+  console.log("Fetched elections:", elections);
   return elections;
+}
+
+export async function getElectionById(election_id: string): Promise<Election | null> {
+  const docRef = doc(db, "elections", election_id);
+  const docSnap = await getDoc(docRef);
+
+  return docSnap.exists() ? parseElection(docSnap) : null;
 }
 
 // ---------------------------
 // Candidates & Results
 // ---------------------------
-export async function getCandidatesByElection(election_id: string): Promise<ElectionCandidate[]> {
+export async function getElectionCandidates(election_id: string): Promise<ElectionCandidate[]> {
   const q = query(collection(db, "election_candidates"), where("election_id", "==", election_id));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as ElectionCandidate);
 }
 
-export async function getResultsByElection(election_id: string): Promise<ElectionResult[]> {
+export async function getElectionResults(election_id: string): Promise<ElectionResult[]> {
   const q = query(collection(db, "election_results"), where("election_id", "==", election_id));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as ElectionResult);
