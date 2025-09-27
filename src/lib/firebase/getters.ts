@@ -63,7 +63,7 @@ function parseElection(doc: DocumentSnapshot): Election {
   if (!data) throw new Error("Document has no data");
 
   return {
-    election_id: doc.id,                        // Now this works
+    _id: doc.id,                        // Now this works
     name: data.name,
     type: data.type,
     date: data.date.toDate(),

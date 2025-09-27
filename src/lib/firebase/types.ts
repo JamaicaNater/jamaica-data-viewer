@@ -84,6 +84,7 @@ export interface Party {
 }
 
 export interface Election {
+  _id?: string;
   election_id?: string;
   name: string;
   type: "general" | "local_government" | "by_election" | "referendum";
@@ -115,7 +116,7 @@ export interface ElectionResult {
   polling_division: string;
   polling_station: string;
   polling_station_location?: string;
-  candidate_results?: any[]; // Can be ElectionCandidateResult[]
+  candidate_results?: {candidate_id: string; votes: number}[]; // Can be ElectionCandidateResult[]
   ballots_rejected: number;
   total_votes: number;
   electors_on_list: number;

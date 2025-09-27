@@ -51,6 +51,7 @@
   {:else if error}
     <p class="text-red-600 text-center">{error}</p>
   {:else if election}
+    <a href={`/elections/${election._id}/map`} class="inline-block mb-4 text-blue-600 hover:underline">View Map for {JSON.stringify(election)}</a>
     <!-- Election Header -->
     <div class="mb-6 text-center">
       <h1 class="text-4xl font-bold text-gray-800">{election.name}</h1>
@@ -98,7 +99,7 @@
             <ul class="mt-2 space-y-1">
                 {#each r.candidate_results.filter(c => c != null) as c}
                 <li class="flex justify-between text-gray-700">
-                    <span>Name: {candidatesMap.get(c.id)?.first_name} {candidatesMap.get(c.id)?.last_name}, Votes: {c.votes}</span>
+                    <span>Name: {candidatesMap.get(c.candidate_id)?.first_name} {candidatesMap.get(c.candidate_id)?.last_name}, Votes: {c.votes}</span>
                 </li>
                 {/each}
             </ul>
