@@ -32,6 +32,18 @@ export interface Constituency {
   geometry: Point[];
 }
 
+export interface Location {
+  object_id: number;
+  entity_name: string;
+  entityLocationType: string; // 'constituency' | 'electoral_division' | 'polling_division' | 'polling_station'
+  const_no?: string;
+  ed_no?: string;
+  pd_no?: string;
+  lat: number;
+  lon: number;
+  geometry: Point[];
+}
+
 export interface ElectoralDivision {
   object_id: number;
   const_no: string;

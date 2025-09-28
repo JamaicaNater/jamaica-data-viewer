@@ -39,7 +39,7 @@
       <ul class="space-y-4">
         {#each elections as election}
           <li class="bg-white border border-gray-200 rounded-lg p-4 shadow hover:shadow-lg transition-shadow duration-200">
-            <a href={`/elections/${election.election_id}`} class="font-semibold text-lg text-gray-800">{election.name}</a>
+            <a href={`/elections/${election._id}`} class="font-semibold text-lg text-gray-800">{election.name}</a>
             <div class="text-sm text-gray-500 mt-1">
               Type: <span class="font-medium">{election.type}</span> | Date: <span class="font-medium">{new Date(election.date).toLocaleDateString()}</span>
             </div>

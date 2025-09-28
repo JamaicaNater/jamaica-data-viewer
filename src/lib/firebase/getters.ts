@@ -8,7 +8,8 @@ import type {
   Election,
   ElectionCandidate,
   ElectionResult,
-  CandidateResult
+  CandidateResult,
+  Location
 } from './types';
 import { initFirebase } from "./client";
 
@@ -28,6 +29,12 @@ export async function getConstituencyByNo(const_no: string): Promise<Constituenc
   return docSnap.exists() ? (docSnap.data() as Constituency) : null;
 }
 
+export async function getConstituencyLocations(const_no: string): Promise<Location[]> {
+  const q = query(collection(db, "locations"), where("const_no", "==", const_no), where("entityLocationType", "==", "constituency"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => doc.data() as Location);
+}
+
 // ---------------------------
 // Electoral Divisions
 // ---------------------------
@@ -35,6 +42,12 @@ export async function getEDsByConst(const_no: string): Promise<ElectoralDivision
   const q = query(collection(db, "electoral_divisions"), where("const_no", "==", const_no));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as ElectoralDivision);
+}
+
+export async function getEDLocationsByConst(const_no: string): Promise<Location[]> {
+  const q = query(collection(db, "locations"), where("const_no", "==", const_no), where("entityLocationType", "==", "electoral_division"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => doc.data() as Location);
 }
 
 // ---------------------------
