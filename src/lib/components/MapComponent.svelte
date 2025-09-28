@@ -1,18 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getConstituencyLocations, getEDLocationsByConst, getEDsByConst } from '$lib/firebase/getters';
+  import { getConstituencyLocations, getEDLocationsByConst, getEDsByConst, getPollingDivisionLocationsByConstituency } from '$lib/firebase/getters';
   import { itemsToGeoJSON } from '$lib/geojson';
   import type { Election } from '$lib/firebase/types';
 
   export let election: Election;
 
-  let selectedView: 'constituency' | 'electoral' = 'constituency';
+  let selectedView: 'constituency' | 'electoral' | 'polling' = 'constituency';
   let mapContainer: HTMLDivElement;
 
   // we keep references here so the $: can access them
   let map: any;
   let constituencyLayer: any;
   let electoralLayer: any;
+  let pollingDivisionLayer: any;
 
   onMount(async () => {
     const L = (await import('leaflet')).default;
@@ -22,8 +23,10 @@
     if (!constituencyId) return;
 
     const constituencyName = election?.constituency_name || 'Unknown Constituency';
+
     const constituencyGeoJSON = itemsToGeoJSON(await getConstituencyLocations(constituencyId));
     const electoralDivisionsGeoJson = itemsToGeoJSON(await getEDLocationsByConst(constituencyId));
+    const pollingDivisionsGeoJson = itemsToGeoJSON(await getPollingDivisionLocationsByConstituency(constituencyId));
     const electoral_division_data = await getEDsByConst(constituencyId);
     const electoral_divisions_map = new Map(electoral_division_data.map(ed => [ed.ed_no, ed]));
 
@@ -53,6 +56,19 @@
       }
     });
 
+    pollingDivisionLayer = L.geoJSON(pollingDivisionsGeoJson, {
+      style: feature => ({
+        color: '#27AE60', weight: 1, fillColor: '#2ECC71', fillOpacity: 0.2, opacity: 1
+      }),
+      onEachFeature: (feature, layer) => {
+        layer.bindPopup(`<strong>Polling Division: ${feature.properties.pd_no}</strong>`);
+        layer.on({
+          mouseover: () => layer.setStyle({ weight: 2, color: '#1ABC9C', fillColor: '#58D68D', fillOpacity: 0.4 }),
+          mouseout: () => layer.setStyle({ weight: 1, color: '#27AE60', fillColor: '#2ECC71', fillOpacity: 0.2 })
+        });
+      }
+    });
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
@@ -63,10 +79,11 @@
   });
 
   // reactive block outside onMount
-  $: if (map && constituencyLayer && electoralLayer) {
-    // remove both
+  $: if (map && constituencyLayer && electoralLayer && pollingDivisionLayer) {
+    // remove all layers
     if (map.hasLayer(constituencyLayer)) map.removeLayer(constituencyLayer);
     if (map.hasLayer(electoralLayer)) map.removeLayer(electoralLayer);
+    if (map.hasLayer(pollingDivisionLayer)) map.removeLayer(pollingDivisionLayer);
 
     // add the selected one
     if (selectedView === 'constituency') {
@@ -75,6 +92,9 @@
     } else if (selectedView === 'electoral') {
       electoralLayer.addTo(map);
       map.fitBounds(electoralLayer.getBounds());
+    } else if (selectedView === 'polling') {
+      pollingDivisionLayer.addTo(map);
+      map.fitBounds(pollingDivisionLayer.getBounds());
     }
   }
 </script>
@@ -96,6 +116,7 @@
     <select id="view" bind:value={selectedView} class="border rounded p-2">
       <option value="constituency">Constituency</option>
       <option value="electoral">Electoral Divisions</option>
+      <option value="polling">Polling Divisions</option>
     </select>
   </div>
 

@@ -63,6 +63,16 @@ export async function getPDsByED(const_no: string, ed_no: string): Promise<Polli
   return snapshot.docs.map(doc => doc.data() as PollingDivision);
 }
 
+export async function getPollingDivisionLocationsByConstituency(const_no: string): Promise<Location[]> {
+  const q = query(
+    collection(db, "locations"),
+    where("const_no", "==", const_no),
+    where("entityLocationType", "==", "polling_division")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => doc.data() as Location);
+}
+
 // ---------------------------
 // Parties
 // ---------------------------
