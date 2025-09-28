@@ -21,61 +21,74 @@
       return;
     }
 
-    const constituency = await getConstituencyLocations(constituencyId);
+    const electoral_division_data = await getEDsByConst(constituencyId);
+    const electoral_divisions_map = new Map(electoral_division_data.map(ed => [ed.ed_no, ed]));
 
-    if (!constituency) {
+    const constituencyLocations = await getConstituencyLocations(constituencyId);
+
+    if (!constituencyLocations) {
       console.error('Constituency not found');
       return;
     }
 
-    const constituencyGeoJSON = itemsToGeoJSON(constituency);
+    const constituencyGeoJSON = itemsToGeoJSON(constituencyLocations);
 
-    const map = L.map(mapContainer);
+    const map = L.map(mapContainer)
 
-    if (true) {
-        const electoralDivisions = await getEDLocationsByConst(constituencyId);
+    const electoralDivisionLocations = await getEDLocationsByConst(constituencyId);
 
-        console.log("EDs:", electoralDivisions, constituencyId);
+    console.log("EDs:", electoralDivisionLocations, constituencyId);
 
-        const electoralDivisionsGeoJson = itemsToGeoJSON(electoralDivisions);
+    const electoralDivisionsGeoJson = itemsToGeoJSON(electoralDivisionLocations);
 
-        console.log("EDs GeoJSON:", electoralDivisionsGeoJson);
+    console.log("EDs GeoJSON:", electoralDivisionsGeoJson);
 
-        L.geoJSON(electoralDivisionsGeoJson, {
-        style: (feature) => ({
-            color: '#ff7800',   // stroke color (border)
-            weight: 2,          // stroke width
-            opacity: 1,
-            fillColor: '#ffaa00', // fill color
-            fillOpacity: 0.5
-        }),
-        onEachFeature: (feature, layer) => {
-            // Make each feature clickable
-            layer.on({
-            
-            click: () => {
-                console.log('Clicked feature:', feature.properties);
-                layer.bindPopup(`<strong>${feature.properties.ed_name}</strong>`).openPopup();
-            },
-            mouseover: () => {
-                layer.setStyle({ weight: 4 }); // highlight on hover
-            },
-            mouseout: () => {
-                layer.setStyle({ weight: 2 }); // reset on hover out
-            }
+    L.geoJSON(electoralDivisionsGeoJson, {
+      style: feature => ({
+        color: '#2C3E50',      // dark navy border
+        weight: 1.5,           // thin stroke
+        fillColor: '#3498DB',  // muted blue fill
+        fillOpacity: 0.3,
+        opacity: 1
+      }),
+      onEachFeature: (feature, layer) => {
+        const ed = electoral_divisions_map.get(feature.properties.ed_no);
+        layer.bindPopup(`<strong>${ed?.const_name}</strong>`);
+
+        layer.on({
+          mouseover: () => {
+            layer.setStyle({
+              weight: 3,
+              color: '#1ABC9C',     // teal border on hover
+              fillColor: '#5DADE2', // brighter blue fill
+              fillOpacity: 0.5
             });
-        }
-        }).addTo(map);
-    }
-
-    L.geoJSON(constituencyGeoJSON, {
-      style: {
-        color: '#3388ff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.2
+            layer.bringToFront(); // keep highlight above others
+          },
+          mouseout: () => {
+            layer.setStyle({
+              weight: 1.5,
+              color: '#2C3E50',     // reset to dark navy border
+              fillColor: '#3498DB', // reset fill
+              fillOpacity: 0.3
+            });
+          },
+        });
       }
     }).addTo(map);
+
+    map.on('click', (e) => {
+      console.log('Map clicked at', e.latlng);
+    });
+
+    // L.geoJSON(constituencyGeoJSON, {
+    //   style: {
+    //     color: '#3388ff',
+    //     weight: 2,
+    //     opacity: 1,
+    //     fillOpacity: 0.2
+    //   }
+    // }).addTo(map);
 
     // auto set view to fit the constituency
     map.fitBounds(L.geoJSON(constituencyGeoJSON).getBounds());
