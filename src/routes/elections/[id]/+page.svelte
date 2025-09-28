@@ -4,6 +4,7 @@
   import { getElectionById, getElectionResults, getElectionCandidates } from '$lib/firebase/getters';
   import { page } from '$app/state';
 import MapComponent from '$lib/components/MapComponent.svelte'; 
+	import { buildElectionName } from '$lib/helpers/format';
 
   let election: Election | null = null;
   let results: ElectionResult[] = [];
@@ -51,10 +52,9 @@ import MapComponent from '$lib/components/MapComponent.svelte';
   {:else if error}
     <p class="text-red-600 text-center">{error}</p>
   {:else if election}
-    <a href={`/elections/${election._id}/map`} class="inline-block mb-4 text-blue-600 hover:underline">View Map for {JSON.stringify(election)}</a>
     <!-- Election Header -->
     <div class="mb-6 text-center">
-      <h1 class="text-4xl font-bold text-gray-800">{election.name}</h1>
+      <h1 class="text-4xl font-bold text-gray-800">{buildElectionName(election)}</h1>
       <p class="text-gray-600 mt-2">{election.type.replace('_', ' ')} | {new Date(election.date).toLocaleDateString()}</p>
     </div>
 

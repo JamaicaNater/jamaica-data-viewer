@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { Election } from '$lib/firebase/types';
   import { getElections } from '$lib/firebase/getters';
+	import { buildElectionName } from '$lib/helpers/format';
 
   let elections: Election[] = [];
   let loading = true;
@@ -39,7 +40,7 @@
       <ul class="space-y-4">
         {#each elections as election}
           <li class="bg-white border border-gray-200 rounded-lg p-4 shadow hover:shadow-lg transition-shadow duration-200">
-            <a href={`/elections/${election._id}`} class="font-semibold text-lg text-gray-800">{election.name}</a>
+            <a href={`/elections/${election._id}`} class="font-semibold text-lg text-gray-800">{buildElectionName(election)}</a>
             <div class="text-sm text-gray-500 mt-1">
               Type: <span class="font-medium">{election.type}</span> | Date: <span class="font-medium">{new Date(election.date).toLocaleDateString()}</span>
             </div>

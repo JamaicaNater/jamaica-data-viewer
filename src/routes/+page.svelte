@@ -11,10 +11,6 @@
     <h1 class="text-5xl font-extrabold text-gray-800">
       Jamaica Data Viewer
     </h1>
-    
-    <h2 class="text-3xl font-semibold text-blue-600">
-      Tailwind 4 works!
-    </h2>
 
     <p class="text-lg text-gray-600">
       Welcome! Explore election data by navigating to the Elections page. Dive into insights and visualize the numbers easily.
