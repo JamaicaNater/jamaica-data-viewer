@@ -13,6 +13,8 @@
 
   onMount(async () => {
     const L = (await import('leaflet')).default;
+    const map = L.map(mapContainer)
+
 
     const constituencyId = String(election?.constituency_id);
 
@@ -25,24 +27,12 @@
     const electoral_divisions_map = new Map(electoral_division_data.map(ed => [ed.ed_no, ed]));
 
     const constituencyLocations = await getConstituencyLocations(constituencyId);
-
-    if (!constituencyLocations) {
-      console.error('Constituency not found');
-      return;
-    }
-
     const constituencyGeoJSON = itemsToGeoJSON(constituencyLocations);
 
-    const map = L.map(mapContainer)
-
     const electoralDivisionLocations = await getEDLocationsByConst(constituencyId);
-
-    console.log("EDs:", electoralDivisionLocations, constituencyId);
-
     const electoralDivisionsGeoJson = itemsToGeoJSON(electoralDivisionLocations);
 
-    console.log("EDs GeoJSON:", electoralDivisionsGeoJson);
-
+    
     L.geoJSON(electoralDivisionsGeoJson, {
       style: feature => ({
         color: '#2C3E50',      // dark navy border
@@ -53,7 +43,7 @@
       }),
       onEachFeature: (feature, layer) => {
         const ed = electoral_divisions_map.get(feature.properties.ed_no);
-        layer.bindPopup(`<strong>${ed?.const_name}</strong>`);
+        layer.bindPopup(`<strong>${ed?.const_name}: ${ed?.ed_name}(${ed?.ed_no})</strong>`);
 
         layer.on({
           mouseover: () => {
