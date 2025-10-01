@@ -97,49 +97,46 @@ export interface Party {
 
 export interface Election {
   _id?: string;
-  election_id?: string;
-  name: string;
   type: "general" | "local_government" | "by_election" | "referendum";
   date: Date;
-  recount_date?: Date;
-  constituency_name?: string;
-  constituency_id?: number;
   created_at?: Date;
   updated_at?: Date;
 }
+
+export interface ElectionRace {
+  _id?: string;
+  election_id?: string;
+  constituency_name?: string;
+  constituency_id?: number;
+  results: ElectionResult[];
+  created_at?: Date;
+  updated_at?: Date;
+}
+
 
 export interface ElectionCandidate {
   _id?: string;
   election_id: string;
   person_id: string;
+  race_id: string;
   first_name: string;
   last_name: string;
   middle_name?: string;
   alias?: string;
   ballot_order: number;
-  votes: number;
   party?: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
 export interface ElectionResult {
-  election_id: string;
   polling_division: string;
   polling_station: string;
   polling_station_location?: string;
-  candidate_results?: {candidate_id: string; votes: number}[]; // Can be ElectionCandidateResult[]
+  candidate_results?: {ballot_order: string; votes: number}[]; // Can be ElectionCandidateResult[]
   ballots_rejected: number;
   total_votes: number;
   electors_on_list: number;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export interface CandidateResult {
-  election_result_id: string;
-  election_candidate_id: string;
-  votes: number;
   created_at?: Date;
   updated_at?: Date;
 }

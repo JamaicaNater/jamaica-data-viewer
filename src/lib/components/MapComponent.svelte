@@ -2,9 +2,12 @@
   import { onMount } from 'svelte';
   import { getConstituencyLocations, getEDLocationsByConst, getEDsByConst, getPollingDivisionLocationsByConstituency } from '$lib/firebase/getters';
   import { itemsToGeoJSON } from '$lib/geojson';
-  import type { Election } from '$lib/firebase/types';
+  import type { Election, ElectionCandidate, ElectionResult } from '$lib/firebase/types';
 
   export let election: Election;
+  export let electionResults: ElectionResult[];
+  export let candidatesMap: Map<string, ElectionCandidate>;
+
 
   let selectedView: 'constituency' | 'electoral' | 'polling' = 'constituency';
   let mapContainer: HTMLDivElement;
@@ -48,6 +51,7 @@
       }),
       onEachFeature: (feature, layer) => {
         const ed = electoral_divisions_map.get(feature.properties.ed_no);
+        
         layer.bindPopup(`<strong>${ed?.const_name}: ${ed?.ed_name} (${ed?.ed_no})</strong>`);
         layer.on({
           mouseover: () => layer.setStyle({ weight: 3, color: '#1ABC9C', fillColor: '#5DADE2', fillOpacity: 0.5 }),

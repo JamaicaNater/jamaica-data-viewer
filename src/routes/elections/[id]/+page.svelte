@@ -1,19 +1,30 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Election, ElectionCandidate, ElectionResult } from '$lib/firebase/types';
-  import { getElectionById, getElectionResults, getElectionCandidates } from '$lib/firebase/getters';
+  import type { Election, ElectionCandidate, ElectionRace, ElectionResult } from '$lib/firebase/types';
+  import { getElectionById, getElectionResults, getElectionCandidates, getRacesByElectionId } from '$lib/firebase/getters';
   import { page } from '$app/state';
-import MapComponent from '$lib/components/MapComponent.svelte'; 
+  import MapComponent from '$lib/components/MapComponent.svelte'; 
 	import { buildElectionName } from '$lib/helpers/format';
+  import { goto } from '$app/navigation';
+
+  function openRace(race: ElectionRace) {
+    console.log("Opening race:", race);
+    goto(`/elections/${race.election_id}/races/${race._id}`, {
+      state: { race } // pass whole object
+    });
+  }
 
   let election: Election | null = null;
   let results: ElectionResult[] = [];
+  let races: ElectionRace[] = [];
+  let raceMap = new Map<string, ElectionRace>();
+
   let candidates: ElectionCandidate[] = [];
   let candidatesMap = new Map<string, ElectionCandidate>();
   let loading = true;
   let error: string | null = null;
 
-  let activeTab: 'results' | 'candidates' | 'map' = 'results';
+  let activeTab: 'races' | 'candidates' | 'map' = 'races';
 
   onMount(async () => {
     try {
@@ -21,11 +32,20 @@ import MapComponent from '$lib/components/MapComponent.svelte';
       if (!id) {
         throw new Error('Election ID is missing in the URL.');
       }
-      
-      election = await getElectionById(id);
       results = await getElectionResults(id);
-      candidates = await getElectionCandidates(id);
+      election = await getElectionById(id);
 
+      races = await getRacesByElectionId(id);
+      races.forEach(r => {
+        if (r._id) {
+            raceMap.set(r._id, r);
+        }
+      });
+
+      console.log("Races:", races);
+      console.log("Races Map:", raceMap);
+
+      candidates = await getElectionCandidates(id);
       candidates.forEach(c => {
         if (c._id) {
             candidatesMap.set(c._id, c);
@@ -43,7 +63,7 @@ import MapComponent from '$lib/components/MapComponent.svelte';
 </script>
 
 <svelte:head>
-  <title>{election?.name || "Election Details"}</title>
+  <title>{election ? buildElectionName(election) : "Election Details"}</title>
 </svelte:head>
 
 <main class="max-w-5xl mx-auto p-6">
@@ -62,13 +82,13 @@ import MapComponent from '$lib/components/MapComponent.svelte';
     <div class="flex border-b border-gray-200 mb-6">
       <button
         class="px-4 py-2 -mb-px font-medium border-b-2 transition-colors duration-200"
-        class:border-blue-600={activeTab === 'results'}
-        class:text-blue-600={activeTab === 'results'}
-        class:text-gray-500={activeTab !== 'results'}
-        class:border-transparent={activeTab !== 'results'}
-        on:click={() => activeTab = 'results'}
+        class:border-blue-600={activeTab === 'races'}
+        class:text-blue-600={activeTab === 'races'}
+        class:text-gray-500={activeTab !== 'races'}
+        class:border-transparent={activeTab !== 'races'}
+        on:click={() => activeTab = 'races'}
       >
-        Results
+        Races
       </button>
 
       <button
@@ -95,28 +115,25 @@ import MapComponent from '$lib/components/MapComponent.svelte';
     </div>
 
     <!-- Tab Content -->
-    {#if activeTab === 'results'}
-      {#if results.length === 0}
-        <p class="text-gray-600">No results available.</p>
+    {#if activeTab === 'races'}
+      {#if races.length === 0}
+        <p class="text-gray-600">No races available.</p>
       {:else}
         <div class="space-y-4">
-          {#each results as r}
-            <div class="bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow">
-              <div class="font-semibold text-gray-800">Division: {r.polling_division} | Station: {r.polling_station}</div>
-              <div class="text-sm text-gray-500 mt-1">
-                Total Votes: {r.total_votes} | Rejected: {r.ballots_rejected} | Electors: {r.electors_on_list}
-              </div>
-            {#if r.candidate_results?.length}
-            <ul class="mt-2 space-y-1">
-                {#each r.candidate_results.filter(c => c != null) as c}
-                <li class="flex justify-between text-gray-700">
-                    <span>Name: {candidatesMap.get(c.candidate_id)?.first_name} {candidatesMap.get(c.candidate_id)?.last_name}, Votes: {c.votes}</span>
-                </li>
-                {/each}
-            </ul>
-            {/if}
+        {#each races as r}
+          <button
+            type="button"
+            on:click={() => openRace(r)}
+            class="w-full text-left cursor-pointer bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <div class="font-semibold text-gray-800">
+              Constituency: {r.constituency_name} ({r.constituency_id})
             </div>
-          {/each}
+            <div class="text-sm text-gray-500 mt-1">
+              View Results for {r.results.length} Polling Stations
+            </div>
+          </button>
+        {/each}
         </div>
       {/if}
     {:else if activeTab === 'candidates'}
@@ -129,16 +146,16 @@ import MapComponent from '$lib/components/MapComponent.svelte';
               <th class="text-left px-4 py-2">Name</th>
               <th class="text-left px-4 py-2">Party</th>
               <th class="text-left px-4 py-2">Ballot Order</th>
-              <th class="text-left px-4 py-2">Votes</th>
+              <th class="text-left px-4 py-2">Race</th>
             </tr>
           </thead>
           <tbody>
             {#each candidates as c, i}
               <tr class="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-2">{c.first_name} {c.middle_name ? c.middle_name + ' ' : ''}{c.last_name} {c.alias ? `(${c.alias})` : ''}</td>
-                <td class="px-4 py-2">{c.party || 'Independent'}</td>
+                <td class="px-4 py-2"><a href={`/persons/${c.person_id}`}>{c.first_name} {c.middle_name ? c.middle_name + ' ' : ''}{c.last_name} {c.alias ? `(${c.alias})` : ''}</a></td>
+                <td class="px-4 py-2"><a href={`/parties/${c.party}`}>{c.party || 'Independent'}</a></td>
                 <td class="px-4 py-2">{c.ballot_order}</td>
-                <td class="px-4 py-2 font-semibold">{c.votes}</td>
+                <td class="px-4 py-2"><a href={`/elections/${election._id}/races/${c.race_id}`}>{raceMap.get(c.race_id)?.constituency_name}</a></td>
               </tr>
             {/each}
           </tbody>
@@ -147,7 +164,7 @@ import MapComponent from '$lib/components/MapComponent.svelte';
     {/if}
 
     {#if activeTab === 'map'}
-      <MapComponent election={election} />
+      <MapComponent election={election} electionResults={results} candidatesMap={candidatesMap} />
     {/if}
   {/if}
 </main>

@@ -8,8 +8,8 @@ import type {
   Election,
   ElectionCandidate,
   ElectionResult,
-  CandidateResult,
-  Location
+  Location,
+  ElectionRace
 } from './types';
 import { initFirebase } from "./client";
 
@@ -80,19 +80,30 @@ export async function getAllParties(): Promise<Party[]> {
   const snapshot = await getDocs(collection(db, "parties"));
   return snapshot.docs.map(doc => doc.data() as Party);
 }
-  
+
+function parseElectionRace(doc: DocumentSnapshot): ElectionRace {
+  const data = doc.data(); // data contains the actual fields
+  if (!data) throw new Error("Document has no data");
+
+  return {
+    _id: doc.id,
+    election_id: data.election_id,
+    constituency_id: data.constituency_id,
+    constituency_name: data.constituency_name,
+    created_at: data.created_at?.toDate(),
+    updated_at: data.updated_at?.toDate(),
+    results: data.results as ElectionResult[],
+  };
+}
+
 function parseElection(doc: DocumentSnapshot): Election {
   const data = doc.data(); // data contains the actual fields
   if (!data) throw new Error("Document has no data");
 
   return {
     _id: doc.id,                        // Now this works
-    name: data.name,
     type: data.type,
     date: data.date.toDate(),
-    recount_date: data.recount_date?.toDate(),
-    constituency_name: data.constituency_name,
-    constituency_id: data.constituency_id,
     created_at: data.created_at?.toDate(),
     updated_at: data.updated_at?.toDate(),
   };
@@ -120,6 +131,19 @@ export async function getElectionById(election_id: string): Promise<Election | n
   return docSnap.exists() ? parseElection(docSnap) : null;
 }
 
+export async function getRaceById(election_id: string, race_id: string): Promise<ElectionRace | null> {
+  const docRef = doc(db, "election_races", race_id);
+  const docSnap = await getDoc(docRef);
+
+  return docSnap.exists() ? parseElectionRace(docSnap) : null;
+}
+
+export async function getRacesByElectionId(election_id: string): Promise<ElectionRace[]> {
+  const q = query(collection(db, "election_races"), where("election_id", "==", election_id));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => parseElectionRace(doc));
+}
+
 // ---------------------------
 // Candidates & Results
 // ---------------------------
@@ -135,11 +159,3 @@ export async function getElectionResults(election_id: string): Promise<ElectionR
   return snapshot.docs.map(doc => doc.data() as ElectionResult);
 }
 
-export async function getCandidateResultsByElectionResult(election_result_id: string): Promise<CandidateResult[]> {
-  const q = query(
-    collection(db, "candidate_results"),
-    where("election_result_id", "==", election_result_id)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => doc.data() as CandidateResult);
-}
