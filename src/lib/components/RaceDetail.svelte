@@ -1,56 +1,41 @@
-<!-- src/lib/components/RaceDetail.svelte -->
 <script lang="ts">
-  import type { ElectionRace } from "$lib/firebase/types";
-
+  import type { ElectionRace } from '$lib/firebase/types';
   export let race: ElectionRace;
+  export let onBack: () => void;
+
+  function goBack() {
+    onBack?.();
+  }
 </script>
 
-{#if race}
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="bg-gray-100 border rounded-lg p-4">
-      <h1 class="text-2xl font-bold text-gray-800">
-        Constituency: {race.constituency_name}
-      </h1>
-      <p class="text-sm text-gray-500">
-        Election ID: {race.election_id} • Created: {race.created_at}
-      </p>
+<div class="bg-white border rounded-lg p-6 shadow">
+  <button
+    type="button"
+    class="mb-4 px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700"
+    on:click={goBack}
+  >
+    ← Back
+  </button>
+
+  <h2 class="text-2xl font-bold text-gray-800">
+    {race.constituency_name} ({race.constituency_id})
+  </h2>
+
+  <p class="text-gray-600 mt-2">
+    Results for {race.results.length} polling stations
+  </p>
+
+  {#if race.results.length > 0}
+    <div class="mt-4 max-h-96 overflow-y-auto border rounded p-2 bg-gray-50">
+      <ul class="space-y-2">
+        {#each race.results as res}
+          <li class="p-2 border rounded bg-white">
+            Polling Division {res.polling_division}: {res.total_votes} votes
+          </li>
+        {/each}
+      </ul>
     </div>
-
-    <!-- Results list -->
-    {#if race.results?.length}
-      {#each race.results as r, i}
-        <div
-          class="bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow"
-        >
-          <div class="font-semibold text-gray-800">
-            Division {r.polling_division} | Station {r.polling_station}
-          </div>
-          <div class="text-sm text-gray-500 mt-1">
-            Location: {r.polling_station_location}
-          </div>
-          <div class="text-sm text-gray-600 mt-2">
-            Electors: {r.electors_on_list} • Votes: {r.total_votes} •
-            Rejected: {r.ballots_rejected}
-          </div>
-
-          <!-- Candidate votes -->
-          {#if r.candidate_results?.length}
-            <ul class="mt-3 space-y-1">
-              {#each r.candidate_results.filter(c => c?.ballot_order) as c}
-                <li class="flex justify-between text-gray-700 text-sm">
-                  <span>Candidate #{c.ballot_order}</span>
-                  <span class="font-semibold">{c.votes ?? 0} votes</span>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
-      {/each}
-    {:else}
-      <p class="text-gray-500 italic">No polling station results yet.</p>
-    {/if}
-  </div>
-{:else}
-  <p class="text-gray-500">No race selected.</p>
-{/if}
+  {:else}
+    <p class="mt-4 text-gray-500">No results yet.</p>
+  {/if}
+</div>

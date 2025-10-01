@@ -1,19 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import type { Election, ElectionCandidate, ElectionRace, ElectionResult } from '$lib/firebase/types';
   import { getElectionById, getElectionResults, getElectionCandidates, getRacesByElectionId } from '$lib/firebase/getters';
-  import { page } from '$app/state';
   import MapComponent from '$lib/components/MapComponent.svelte'; 
-	import { buildElectionName } from '$lib/helpers/format';
-  import { goto } from '$app/navigation';
+  import { buildElectionName } from '$lib/helpers/format';
+  import RaceDetail from '$lib/components/RaceDetail.svelte';
 
-  function openRace(race: ElectionRace) {
-    console.log("Opening race:", race);
-    goto(`/elections/${race.election_id}/races/${race._id}`, {
-      state: { race } // pass whole object
-    });
-  }
-
+  // State
   let election: Election | null = null;
   let results: ElectionResult[] = [];
   let races: ElectionRace[] = [];
@@ -25,34 +19,23 @@
   let error: string | null = null;
 
   let activeTab: 'races' | 'candidates' | 'map' = 'races';
+  let selectedRace: ElectionRace | null = null;
 
   onMount(async () => {
     try {
-      const id = page.params.id; // updated for Svelte 5
+      const id = $page.params.id; // ✅ updated for SvelteKit
       if (!id) {
         throw new Error('Election ID is missing in the URL.');
       }
+
       results = await getElectionResults(id);
       election = await getElectionById(id);
 
       races = await getRacesByElectionId(id);
-      races.forEach(r => {
-        if (r._id) {
-            raceMap.set(r._id, r);
-        }
-      });
-
-      console.log("Races:", races);
-      console.log("Races Map:", raceMap);
+      races.forEach(r => r._id && raceMap.set(r._id, r));
 
       candidates = await getElectionCandidates(id);
-      candidates.forEach(c => {
-        if (c._id) {
-            candidatesMap.set(c._id, c);
-        }
-      });
-
-      console.log("Candidates Map:", candidatesMap);
+      candidates.forEach(c => c._id && candidatesMap.set(c._id, c));
     } catch (e) {
       console.error(e);
       error = 'Failed to load election details.';
@@ -60,6 +43,14 @@
       loading = false;
     }
   });
+
+  function openRace(race: ElectionRace) {
+    selectedRace = race;
+  }
+
+  function closeRace() {
+    selectedRace = null;
+  }
 </script>
 
 <svelte:head>
@@ -75,7 +66,9 @@
     <!-- Election Header -->
     <div class="mb-6 text-center">
       <h1 class="text-4xl font-bold text-gray-800">{buildElectionName(election)}</h1>
-      <p class="text-gray-600 mt-2">{election.type.replace('_', ' ')} | {new Date(election.date).toLocaleDateString()}</p>
+      <p class="text-gray-600 mt-2">
+        {election.type.replace('_', ' ')} | {new Date(election.date).toLocaleDateString()}
+      </p>
     </div>
 
     <!-- Tabs -->
@@ -86,7 +79,7 @@
         class:text-blue-600={activeTab === 'races'}
         class:text-gray-500={activeTab !== 'races'}
         class:border-transparent={activeTab !== 'races'}
-        on:click={() => activeTab = 'races'}
+        on:click={() => { activeTab = 'races'; selectedRace = null; }}
       >
         Races
       </button>
@@ -116,24 +109,27 @@
 
     <!-- Tab Content -->
     {#if activeTab === 'races'}
-      {#if races.length === 0}
+      {#if selectedRace}
+        <!-- Race detail view -->
+        <RaceDetail race={selectedRace} onBack={closeRace} />
+      {:else if races.length === 0}
         <p class="text-gray-600">No races available.</p>
       {:else}
         <div class="space-y-4">
-        {#each races as r}
-          <button
-            type="button"
-            on:click={() => openRace(r)}
-            class="w-full text-left cursor-pointer bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <div class="font-semibold text-gray-800">
-              Constituency: {r.constituency_name} ({r.constituency_id})
-            </div>
-            <div class="text-sm text-gray-500 mt-1">
-              View Results for {r.results.length} Polling Stations
-            </div>
-          </button>
-        {/each}
+          {#each races as r}
+            <button
+              type="button"
+              on:click={() => openRace(r)}
+              class="w-full text-left cursor-pointer bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow"
+            >
+              <div class="font-semibold text-gray-800">
+                Constituency: {r.constituency_name} ({r.constituency_id})
+              </div>
+              <div class="text-sm text-gray-500 mt-1">
+                View Results for {r.results.length} Polling Stations
+              </div>
+            </button>
+          {/each}
         </div>
       {/if}
     {:else if activeTab === 'candidates'}
@@ -150,20 +146,27 @@
             </tr>
           </thead>
           <tbody>
-            {#each candidates as c, i}
+            {#each candidates as c}
               <tr class="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-2"><a href={`/persons/${c.person_id}`}>{c.first_name} {c.middle_name ? c.middle_name + ' ' : ''}{c.last_name} {c.alias ? `(${c.alias})` : ''}</a></td>
-                <td class="px-4 py-2"><a href={`/parties/${c.party}`}>{c.party || 'Independent'}</a></td>
+                <td class="px-4 py-2">
+                  <a href={`/persons/${c.person_id}`}>
+                    {c.first_name} {c.middle_name ? c.middle_name + ' ' : ''}{c.last_name}
+                    {c.alias ? `(${c.alias})` : ''}
+                  </a>
+                </td>
+                <td class="px-4 py-2">
+                  <a href={`/parties/${c.party}`}>{c.party || 'Independent'}</a>
+                </td>
                 <td class="px-4 py-2">{c.ballot_order}</td>
-                <td class="px-4 py-2"><a href={`/elections/${election._id}/races/${c.race_id}`}>{raceMap.get(c.race_id)?.constituency_name}</a></td>
+                <td class="px-4 py-2">
+                  {raceMap.get(c.race_id)?.constituency_name}
+                </td>
               </tr>
             {/each}
           </tbody>
         </table>
       {/if}
-    {/if}
-
-    {#if activeTab === 'map'}
+    {:else if activeTab === 'map'}
       <MapComponent election={election} electionResults={results} candidatesMap={candidatesMap} />
     {/if}
   {/if}
