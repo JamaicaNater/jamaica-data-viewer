@@ -1,13 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getConstituencyLocations, getEDLocationsByConst, getEDsByConst, getPollingDivisionLocationsByConstituency } from '$lib/firebase/getters';
+  import { getEDLocationsByConst, getEDsByConst, getPollingDivisionLocationsByConstituency } from '$lib/firebase/getters';
   import { itemsToGeoJSON } from '$lib/geojson';
-  import type { Election, ElectionCandidate, ElectionResult } from '$lib/firebase/types';
+  import type { Election, ElectionRace } from '$lib/firebase/types';
+	import { fetchAllFilesInDir, fetchFile, listFilesWithDepth } from '$lib/firebase/storage';
 
-  export let election: Election;
-  export let electionResults: ElectionResult[];
-  export let candidatesMap: Map<string, ElectionCandidate>;
-
+  export let races: ElectionRace[];
 
   let selectedView: 'constituency' | 'electoral' | 'polling' = 'constituency';
   let mapContainer: HTMLDivElement;
@@ -22,12 +20,33 @@
     const L = (await import('leaflet')).default;
     map = L.map(mapContainer);
 
-    const constituencyId = String(election?.constituency_id);
+    console.log('Races prop:', races);
+
+    let firstRace = races[0];
+
+    const constituencyId = String(firstRace?.constituency_no);
     if (!constituencyId) return;
 
-    const constituencyName = election?.constituency_name || 'Unknown Constituency';
+    const constituencyName = firstRace?.constituency_name || 'Unknown Constituency';
 
-    const constituencyGeoJSON = itemsToGeoJSON(await getConstituencyLocations(constituencyId));
+    
+
+    const electoralDivisionsFiles = await listFilesWithDepth(`maps/2010/constituencies/${constituencyId}/electoral_divisions/`);
+    console.log('Files in constituency directory:', electoralDivisionsFiles);
+
+    const rawConstituencyData = await fetchFile(`maps/2010/constituencies/${constituencyId}.geojson`);
+    const text = new TextDecoder().decode(rawConstituencyData);
+    const constituencyGeoJSON = JSON.parse(text);
+
+    const EDGeoJsons: any[] = [];
+    const rawEDData = await fetchAllFilesInDir(`maps/2010/constituencies/${constituencyId}/electoral_divisions/`);
+    for (const [fileName, data] of Object.entries(rawEDData)) {
+      console.log(`ED File: ${fileName}`, new TextDecoder().decode(data));
+      EDGeoJsons.push(JSON.parse(new TextDecoder().decode(data)));
+    }
+
+    console.log('Constituency GeoJSON:', constituencyGeoJSON);
+
     const electoralDivisionsGeoJson = itemsToGeoJSON(await getEDLocationsByConst(constituencyId));
     const pollingDivisionsGeoJson = itemsToGeoJSON(await getPollingDivisionLocationsByConstituency(constituencyId));
     const electoral_division_data = await getEDsByConst(constituencyId);
@@ -45,7 +64,7 @@
       }
     });
 
-    electoralLayer = L.geoJSON(electoralDivisionsGeoJson, {
+    electoralLayer = L.geoJSON(EDGeoJsons, {
       style: feature => ({
         color: '#2C3E50', weight: 1.5, fillColor: '#3498DB', fillOpacity: 0.3, opacity: 1
       }),
@@ -60,18 +79,18 @@
       }
     });
 
-    pollingDivisionLayer = L.geoJSON(pollingDivisionsGeoJson, {
-      style: feature => ({
-        color: '#27AE60', weight: 1, fillColor: '#2ECC71', fillOpacity: 0.2, opacity: 1
-      }),
-      onEachFeature: (feature, layer) => {
-        layer.bindPopup(`<strong>Polling Division: ${feature.properties.pd_no}</strong>`);
-        layer.on({
-          mouseover: () => layer.setStyle({ weight: 2, color: '#1ABC9C', fillColor: '#58D68D', fillOpacity: 0.4 }),
-          mouseout: () => layer.setStyle({ weight: 1, color: '#27AE60', fillColor: '#2ECC71', fillOpacity: 0.2 })
-        });
-      }
-    });
+    // pollingDivisionLayer = L.geoJSON(pollingDivisionsGeoJson, {
+    //   style: feature => ({
+    //     color: '#27AE60', weight: 1, fillColor: '#2ECC71', fillOpacity: 0.2, opacity: 1
+    //   }),
+    //   onEachFeature: (feature, layer) => {
+    //     layer.bindPopup(`<strong>Polling Division: ${feature.properties.pd_no}</strong>`);
+    //     layer.on({
+    //       mouseover: () => layer.setStyle({ weight: 2, color: '#1ABC9C', fillColor: '#58D68D', fillOpacity: 0.4 }),
+    //       mouseout: () => layer.setStyle({ weight: 1, color: '#27AE60', fillColor: '#2ECC71', fillOpacity: 0.2 })
+    //     });
+    //   }
+    // });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'

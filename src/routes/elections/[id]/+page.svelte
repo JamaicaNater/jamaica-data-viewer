@@ -129,7 +129,7 @@
               class="w-full text-left cursor-pointer bg-white border rounded-lg p-4 shadow hover:shadow-md transition-shadow"
             >
               <div class="font-semibold text-gray-800">
-                Constituency: {r.constituency_name} ({r.constituency_id})
+                Constituency: {r.constituency_name} ({r.constituency_no})
               </div>
               <div class="text-sm text-gray-500 mt-1">
                 View Results for {r.results.length} Polling Stations
@@ -165,8 +165,10 @@
           {/each}
         </div>
       {/if}
+    {:else if activeTab === 'map' && races.length > 0}
+      <MapComponent races={races} />
     {:else if activeTab === 'map'}
-      <MapComponent election={election} electionResults={results} candidatesMap={candidatesMap} />
+      <p class="text-gray-500 text-center">Loading map...</p>
     {/if}
   {/if}
 </main>

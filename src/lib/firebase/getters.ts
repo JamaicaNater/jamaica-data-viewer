@@ -88,7 +88,7 @@ function parseElectionRace(doc: DocumentSnapshot): ElectionRace {
   return {
     _id: doc.id,
     election_id: data.election_id,
-    constituency_id: data.constituency_id,
+    constituency_no: data.constituency_no,
     constituency_name: data.constituency_name,
     created_at: data.created_at?.toDate(),
     updated_at: data.updated_at?.toDate(),

@@ -96,7 +96,7 @@ export interface Party {
 }
 
 export interface Election {
-  _id?: string;
+  _id: string;
   type: "general" | "local_government" | "by_election" | "referendum";
   date: Date;
   created_at?: Date;
@@ -104,10 +104,10 @@ export interface Election {
 }
 
 export interface ElectionRace {
-  _id?: string;
-  election_id?: string;
-  constituency_name?: string;
-  constituency_id?: number;
+  _id: string;
+  election_id: string;
+  constituency_name: string;
+  constituency_no: number;
   results: ElectionResult[];
   created_at?: Date;
   updated_at?: Date;
@@ -115,7 +115,7 @@ export interface ElectionRace {
 
 
 export interface ElectionCandidate {
-  _id?: string;
+  _id: string;
   election_id: string;
   person_id: string;
   race_id: string;

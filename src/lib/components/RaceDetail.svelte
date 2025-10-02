@@ -30,7 +30,7 @@
 
   <!-- Header -->
   <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
-    {race.constituency_name} ({race.constituency_id})
+    {race.constituency_name} ({race.constituency_no}) 
   </h2>
   <p class="text-gray-600 text-sm sm:text-base mb-4">
     Results for {race.results.length} polling stations
