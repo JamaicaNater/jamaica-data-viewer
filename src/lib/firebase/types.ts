@@ -124,7 +124,7 @@ export interface ElectionCandidate {
   middle_name?: string;
   alias?: string;
   ballot_order: number;
-  party?: string;
+  party: string;
   created_at?: Date;
   updated_at?: Date;
 }
