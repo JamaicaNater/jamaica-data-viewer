@@ -39,21 +39,6 @@
 
       candidates = await getElectionCandidates(id);
       candidates.forEach(c => c._id && candidatesMap.set(c._id, c));
-
-      races.forEach(race => {
-        raceCandidatesMap.set(race._id!, new Map<number, ElectionCandidate>());
-      });
-      candidates.forEach(candidate => {
-        const raceId = candidate.race_id!;
-        const candidateMap = raceCandidatesMap.get(raceId) || new Map<number, ElectionCandidate>();
-        candidateMap.set(candidate.ballot_order, candidate);
-        raceCandidatesMap.set(raceId, candidateMap);
-      });
-
-      for (const [raceId, candidateMap] of raceCandidatesMap.entries()) {
-        console.log(`debug`, raceCandidatesMap.get(raceId));
-      }
-
     } catch (e) {
       console.error(e);
       error = 'Failed to load election details.';
@@ -128,11 +113,15 @@
     <!-- Tab Content -->
     {#if activeTab === 'races'}
       {#if selectedRace}
-        <RaceDetail race={selectedRace} candidates={candidates.filter(c => c.race_id === selectedRace!._id)} onBack={closeRace} />
+        <RaceDetail 
+          race={selectedRace} 
+          candidates={candidates.filter(c => c.race_id === selectedRace!._id)} 
+          onBack={closeRace} 
+        />
       {:else if races.length === 0}
         <p class="text-gray-600">No races available.</p>
       {:else}
-        <div class="space-y-4">
+        <div class="max-h-[50vh] overflow-y-auto space-y-4">
           {#each races as r}
             <button
               type="button"
@@ -153,7 +142,7 @@
       {#if candidates.length === 0}
         <p class="text-gray-600">No candidates available.</p>
       {:else}
-        <div class="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
+        <div class="max-h-[50vh] overflow-y-auto grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
           {#each candidates as c}
             <div class="bg-white border rounded-lg shadow p-4 hover:shadow-md transition-shadow">
               <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">

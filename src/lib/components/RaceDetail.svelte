@@ -38,7 +38,7 @@
 
   {#if race.results.length > 0}
     <!-- Scrollable list -->
-    <div class="space-y-4 max-h-[65vh] overflow-y-auto">
+    <div class="space-y-4 max-h-[50vh] overflow-y-auto">
       {#each race.results as res}
         <div class="bg-gray-50 border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
           <!-- Polling division header -->
