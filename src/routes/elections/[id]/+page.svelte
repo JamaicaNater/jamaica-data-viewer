@@ -153,35 +153,28 @@
       {#if candidates.length === 0}
         <p class="text-gray-600">No candidates available.</p>
       {:else}
-        <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="text-left px-4 py-2">Name</th>
-              <th class="text-left px-4 py-2">Party</th>
-              <th class="text-left px-4 py-2">Ballot Order</th>
-              <th class="text-left px-4 py-2">Race</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each candidates as c}
-              <tr class="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-2">
+        <div class="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
+          {#each candidates as c}
+            <div class="bg-white border rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <div class="text-lg font-semibold text-gray-800">
                   <a href={`/persons/${c.person_id}`}>
                     {c.first_name} {c.middle_name ? c.middle_name + ' ' : ''}{c.last_name}
-                    {c.alias ? `(${c.alias})` : ''}
+                    {c.alias ? ` (${c.alias})` : ''}
                   </a>
-                </td>
-                <td class="px-4 py-2">
-                  <a href={`/parties/${c.party}`}>{c.party || 'Independent'}</a>
-                </td>
-                <td class="px-4 py-2">{c.ballot_order}</td>
-                <td class="px-4 py-2">
-                  {raceMap.get(c.race_id)?.constituency_name}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+                </div>
+                <div class="text-sm text-gray-500 mt-1 sm:mt-0">
+                  Ballot Order: {c.ballot_order}
+                </div>
+              </div>
+
+              <div class="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-center text-gray-600 text-sm">
+                <div>Party: <a href={`/parties/${c.party}`}>{c.party || 'Independent'}</a></div>
+                <div>Race: {raceMap.get(c.race_id)?.constituency_name}</div>
+              </div>
+            </div>
+          {/each}
+        </div>
       {/if}
     {:else if activeTab === 'map'}
       <MapComponent election={election} electionResults={results} candidatesMap={candidatesMap} />
