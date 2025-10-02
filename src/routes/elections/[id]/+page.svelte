@@ -15,6 +15,9 @@
 
   let candidates: ElectionCandidate[] = [];
   let candidatesMap = new Map<string, ElectionCandidate>();
+
+  let raceCandidatesMap = new Map<string, Map<number, ElectionCandidate>>();
+
   let loading = true;
   let error: string | null = null;
 
@@ -36,6 +39,21 @@
 
       candidates = await getElectionCandidates(id);
       candidates.forEach(c => c._id && candidatesMap.set(c._id, c));
+
+      races.forEach(race => {
+        raceCandidatesMap.set(race._id!, new Map<number, ElectionCandidate>());
+      });
+      candidates.forEach(candidate => {
+        const raceId = candidate.race_id!;
+        const candidateMap = raceCandidatesMap.get(raceId) || new Map<number, ElectionCandidate>();
+        candidateMap.set(candidate.ballot_order, candidate);
+        raceCandidatesMap.set(raceId, candidateMap);
+      });
+
+      for (const [raceId, candidateMap] of raceCandidatesMap.entries()) {
+        console.log(`debug`, raceCandidatesMap.get(raceId));
+      }
+
     } catch (e) {
       console.error(e);
       error = 'Failed to load election details.';
@@ -110,8 +128,7 @@
     <!-- Tab Content -->
     {#if activeTab === 'races'}
       {#if selectedRace}
-        <!-- Race detail view -->
-        <RaceDetail race={selectedRace} onBack={closeRace} />
+        <RaceDetail race={selectedRace} candidates={candidates.filter(c => c.race_id === selectedRace!._id)} onBack={closeRace} />
       {:else if races.length === 0}
         <p class="text-gray-600">No races available.</p>
       {:else}

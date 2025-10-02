@@ -1,6 +1,15 @@
 <script lang="ts">
-  import type { ElectionRace } from '$lib/firebase/types';
+  import type { ElectionCandidate, ElectionRace } from '$lib/firebase/types';
   export let race: ElectionRace;
+  export let candidates: ElectionCandidate[];
+
+  const candidatesByBallot = new Map<number, ElectionCandidate>();
+    candidates.forEach(c => {
+        if (c.ballot_order !== null && c.ballot_order !== undefined) {
+        candidatesByBallot.set(c.ballot_order, c);
+        }
+    });
+
   export let onBack: () => void;
 
   function goBack() {
@@ -32,6 +41,17 @@
           <li class="p-2 border rounded bg-white">
             Polling Division {res.polling_division}: {res.total_votes} votes
           </li>
+          <ul>
+          {#each res.candidate_results as candidate_result}
+            
+            {#if candidatesByBallot.has(candidate_result.ballot_order)}
+              <li class="ml-4 mt-1 text-sm text-gray-700">
+                {candidatesByBallot.get(candidate_result.ballot_order)?.first_name} {candidatesByBallot.get(candidate_result.ballot_order)?.last_name} ({candidatesByBallot.get(candidate_result.ballot_order)?.party}): {candidate_result.votes} votes
+              </li>
+            {/if}
+            
+          {/each}
+        </ul>
         {/each}
       </ul>
     </div>

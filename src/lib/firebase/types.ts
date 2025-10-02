@@ -133,7 +133,7 @@ export interface ElectionResult {
   polling_division: string;
   polling_station: string;
   polling_station_location?: string;
-  candidate_results?: {ballot_order: string; votes: number}[]; // Can be ElectionCandidateResult[]
+  candidate_results: {ballot_order: number; votes: number}[]; // Can be ElectionCandidateResult[]
   ballots_rejected: number;
   total_votes: number;
   electors_on_list: number;
